@@ -7,7 +7,10 @@ use GraphQLFormatter\Command\FixCommand;
 use GraphQLFormatter\Config\FormatterConfig;
 use Symfony\Component\Console\Application;
 
-foreach ([__DIR__ . '/../vendor/autoload.php', __DIR__ . '/../../autoload.php'] as $autoload) {
+foreach ([
+    __DIR__ . '/../vendor/autoload.php',   // running from source repo
+    __DIR__ . '/../../../autoload.php',     // installed as a composer dependency
+] as $autoload) {
     if (file_exists($autoload)) { require $autoload; break; }
 }
 
