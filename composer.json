@@ -1,5 +1,5 @@
 {
-    "name": "graphql-formatter/graphql-formatter",
+    "name": "pawell67/graphql-formatter",
     "description": "Opinionated formatter for .gql and .graphql files",
     "type": "library",
     "license": "MIT",
