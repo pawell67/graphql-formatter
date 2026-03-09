@@ -81,4 +81,12 @@ class PrinterTest extends TestCase
         $output = $printer->print(Parser::parse('query Q { findUser(id: "very-long-identifier-string") { name } }'));
         $this->assertStringNotContainsString('findUser(id: "very-long-identifier-string")', $output);
     }
+
+    // Task 07: object value args
+    public function test_object_value_arg_always_expands_multiline(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { createUser(input: { name: "Bob", age: 30 }) { id } }'));
+        $this->assertStringContainsString("createUser(\n", $output);
+        $this->assertStringContainsString('name: "Bob"', $output);
+    }
 }
