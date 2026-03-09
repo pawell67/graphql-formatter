@@ -4,4 +4,4 @@ vendor/
 
 # CLAUDE.md files are only allowed at the project root
 **/CLAUDE.md
-!CLAUDE.md
+!/CLAUDE.md

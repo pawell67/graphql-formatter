@@ -174,4 +174,84 @@ class PrinterTest extends TestCase
         $second = $this->printer->print(Parser::parse($first));
         $this->assertSame($first, $second);
     }
+
+    // SDL: input object type
+    public function test_input_object_type_definition_renders_correctly(): void
+    {
+        $ast = Parser::parse('input CreateUserInput { name: String! email: String! age: Int }');
+        $expected = "input CreateUserInput {\n    name: String!\n    email: String!\n    age: Int\n}\n";
+        $this->assertSame($expected, $this->printer->print($ast));
+    }
+
+    public function test_input_object_type_with_default_value(): void
+    {
+        $ast = Parser::parse('input SearchInput { query: String limit: Int = 10 }');
+        $expected = "input SearchInput {\n    query: String\n    limit: Int = 10\n}\n";
+        $this->assertSame($expected, $this->printer->print($ast));
+    }
+
+    // SDL: object type definition
+    public function test_object_type_definition_renders_correctly(): void
+    {
+        $ast = Parser::parse('type User { id: ID! name: String! email: String }');
+        $expected = "type User {\n    id: ID!\n    name: String!\n    email: String\n}\n";
+        $this->assertSame($expected, $this->printer->print($ast));
+    }
+
+    public function test_object_type_with_implements(): void
+    {
+        $ast = Parser::parse('type User implements Node & Entity { id: ID! name: String! }');
+        $expected = "type User implements Node & Entity {\n    id: ID!\n    name: String!\n}\n";
+        $this->assertSame($expected, $this->printer->print($ast));
+    }
+
+    // SDL: enum type definition
+    public function test_enum_type_definition_renders_correctly(): void
+    {
+        $ast = Parser::parse('enum Status { ACTIVE INACTIVE PENDING }');
+        $expected = "enum Status {\n    ACTIVE\n    INACTIVE\n    PENDING\n}\n";
+        $this->assertSame($expected, $this->printer->print($ast));
+    }
+
+    // SDL: scalar type definition
+    public function test_scalar_type_definition_renders_correctly(): void
+    {
+        $ast = Parser::parse('scalar DateTime');
+        $expected = "scalar DateTime\n";
+        $this->assertSame($expected, $this->printer->print($ast));
+    }
+
+    // SDL: interface type definition
+    public function test_interface_type_definition_renders_correctly(): void
+    {
+        $ast = Parser::parse('interface Node { id: ID! }');
+        $expected = "interface Node {\n    id: ID!\n}\n";
+        $this->assertSame($expected, $this->printer->print($ast));
+    }
+
+    // SDL: union type definition
+    public function test_union_type_definition_renders_correctly(): void
+    {
+        $ast = Parser::parse('union SearchResult = User | Post | Comment');
+        $expected = "union SearchResult = User | Post | Comment\n";
+        $this->assertSame($expected, $this->printer->print($ast));
+    }
+
+    // SDL idempotency
+    public function test_input_type_formatting_is_idempotent(): void
+    {
+        $gql = 'input CreateUserInput { name: String! email: String! age: Int = 0 }';
+        $first = $this->printer->print(Parser::parse($gql));
+        $second = $this->printer->print(Parser::parse($first));
+        $this->assertSame($first, $second);
+    }
+
+    public function test_mixed_query_and_input_types_separated_by_blank_line(): void
+    {
+        $gql = 'input Foo { bar: String } query Q { field { id } }';
+        $output = $this->printer->print(Parser::parse($gql));
+        $this->assertStringContainsString("input Foo", $output);
+        $this->assertStringContainsString("query Q", $output);
+        $this->assertStringContainsString("\n\n", $output);
+    }
 }

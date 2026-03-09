@@ -8,12 +8,21 @@ use GraphQL\Language\AST\ArgumentNode;
 use GraphQL\Language\AST\BooleanValueNode;
 use GraphQL\Language\AST\DirectiveNode;
 use GraphQL\Language\AST\DocumentNode;
+use GraphQL\Language\AST\EnumTypeDefinitionNode;
+use GraphQL\Language\AST\EnumTypeExtensionNode;
+use GraphQL\Language\AST\EnumValueDefinitionNode;
 use GraphQL\Language\AST\EnumValueNode;
+use GraphQL\Language\AST\FieldDefinitionNode;
 use GraphQL\Language\AST\FieldNode;
 use GraphQL\Language\AST\FloatValueNode;
 use GraphQL\Language\AST\FragmentDefinitionNode;
 use GraphQL\Language\AST\FragmentSpreadNode;
 use GraphQL\Language\AST\InlineFragmentNode;
+use GraphQL\Language\AST\InputObjectTypeDefinitionNode;
+use GraphQL\Language\AST\InputObjectTypeExtensionNode;
+use GraphQL\Language\AST\InputValueDefinitionNode;
+use GraphQL\Language\AST\InterfaceTypeDefinitionNode;
+use GraphQL\Language\AST\InterfaceTypeExtensionNode;
 use GraphQL\Language\AST\IntValueNode;
 use GraphQL\Language\AST\ListTypeNode;
 use GraphQL\Language\AST\ListValueNode;
@@ -22,10 +31,18 @@ use GraphQL\Language\AST\Node;
 use GraphQL\Language\AST\NodeList;
 use GraphQL\Language\AST\NonNullTypeNode;
 use GraphQL\Language\AST\NullValueNode;
+use GraphQL\Language\AST\ObjectTypeDefinitionNode;
+use GraphQL\Language\AST\ObjectTypeExtensionNode;
 use GraphQL\Language\AST\ObjectValueNode;
 use GraphQL\Language\AST\OperationDefinitionNode;
+use GraphQL\Language\AST\ScalarTypeDefinitionNode;
+use GraphQL\Language\AST\ScalarTypeExtensionNode;
+use GraphQL\Language\AST\SchemaDefinitionNode;
+use GraphQL\Language\AST\SchemaExtensionNode;
 use GraphQL\Language\AST\SelectionSetNode;
 use GraphQL\Language\AST\StringValueNode;
+use GraphQL\Language\AST\UnionTypeDefinitionNode;
+use GraphQL\Language\AST\UnionTypeExtensionNode;
 use GraphQL\Language\AST\VariableDefinitionNode;
 use GraphQL\Language\AST\VariableNode;
 use GraphQLFormatter\Config\FormatterConfig;
@@ -55,8 +72,24 @@ final class Printer
     private function printDefinition(Node $node): string
     {
         return match (true) {
+            // Executable definitions
             $node instanceof OperationDefinitionNode => $this->printOperation($node),
-            $node instanceof FragmentDefinitionNode => $this->printFragment($node),
+            $node instanceof FragmentDefinitionNode  => $this->printFragment($node),
+            // SDL type definitions
+            $node instanceof InputObjectTypeDefinitionNode => $this->printInputObjectTypeDefinition($node),
+            $node instanceof InputObjectTypeExtensionNode  => $this->printInputObjectTypeExtension($node),
+            $node instanceof ObjectTypeDefinitionNode      => $this->printObjectTypeDefinition($node),
+            $node instanceof ObjectTypeExtensionNode       => $this->printObjectTypeExtension($node),
+            $node instanceof InterfaceTypeDefinitionNode   => $this->printInterfaceTypeDefinition($node),
+            $node instanceof InterfaceTypeExtensionNode    => $this->printInterfaceTypeExtension($node),
+            $node instanceof EnumTypeDefinitionNode        => $this->printEnumTypeDefinition($node),
+            $node instanceof EnumTypeExtensionNode         => $this->printEnumTypeExtension($node),
+            $node instanceof UnionTypeDefinitionNode       => $this->printUnionTypeDefinition($node),
+            $node instanceof UnionTypeExtensionNode        => $this->printUnionTypeExtension($node),
+            $node instanceof ScalarTypeDefinitionNode      => $this->printScalarTypeDefinition($node),
+            $node instanceof ScalarTypeExtensionNode       => $this->printScalarTypeExtension($node),
+            $node instanceof SchemaDefinitionNode          => $this->printSchemaDefinition($node),
+            $node instanceof SchemaExtensionNode           => $this->printSchemaExtension($node),
             default => throw new \RuntimeException('Unsupported definition node: ' . $node::class),
         };
     }
@@ -284,5 +317,295 @@ final class Printer
         }
 
         return $result;
+    }
+
+    // -------------------------------------------------------------------------
+    // SDL (Schema Definition Language) printers
+    // -------------------------------------------------------------------------
+
+    private function printSdlDescription(?StringValueNode $description): string
+    {
+        if ($description === null || $description->value === '') {
+            return '';
+        }
+
+        // Block strings as triple-quoted descriptions
+        $value = $description->value;
+        return '"""' . "\n" . $value . "\n" . '"""' . "\n";
+    }
+
+    /** @param NodeList<DirectiveNode> $directives */
+    private function printSdlDirectives(NodeList $directives): string
+    {
+        if (count($directives) === 0) {
+            return '';
+        }
+        $parts = [];
+        foreach ($directives as $directive) {
+            $parts[] = $this->printDirective($directive, 0);
+        }
+
+        return ' ' . implode(' ', $parts);
+    }
+
+    /**
+     * Print a block of SDL field/value definitions with configurable indentation.
+     *
+     * @template TNode of Node
+     * @param NodeList<TNode> $items
+     */
+    private function printSdlBlock(NodeList $items, callable $printer): string
+    {
+        if (count($items) === 0) {
+            return '{}';
+        }
+        $indent = $this->config->indent;
+        $lines = [];
+        foreach ($items as $item) {
+            $lines[] = $indent . $printer($item);
+        }
+
+        return "{\n" . implode("\n", $lines) . "\n}";
+    }
+
+    private function printInputValueDefinition(InputValueDefinitionNode $node): string
+    {
+        $desc = $this->printSdlDescription($node->description);
+        $result = $node->name->value . ': ' . $this->printType($node->type);
+        if ($node->defaultValue !== null) {
+            $result .= ' = ' . $this->printValue($node->defaultValue, 0);
+        }
+        $result .= $this->printSdlDirectives($node->directives);
+
+        return $desc . $result;
+    }
+
+    private function printFieldDefinition(FieldDefinitionNode $node): string
+    {
+        $desc = $this->printSdlDescription($node->description);
+        $result = $node->name->value;
+
+        // Field arguments (rare in SDL but valid)
+        if (count($node->arguments) > 0) {
+            $argParts = [];
+            foreach ($node->arguments as $arg) {
+                $argParts[] = $this->printInputValueDefinition($arg);
+            }
+            $result .= '(' . implode(', ', $argParts) . ')';
+        }
+
+        $result .= ': ' . $this->printType($node->type);
+        $result .= $this->printSdlDirectives($node->directives);
+
+        return $desc . $result;
+    }
+
+    private function printInputObjectTypeDefinition(InputObjectTypeDefinitionNode $node): string
+    {
+        $desc = $this->printSdlDescription($node->description);
+        $header = 'input ' . $node->name->value . $this->printSdlDirectives($node->directives);
+        $block = $this->printSdlBlock($node->fields, fn (InputValueDefinitionNode $f) => $this->printInputValueDefinition($f));
+
+        return $desc . $header . ' ' . $block;
+    }
+
+    private function printInputObjectTypeExtension(InputObjectTypeExtensionNode $node): string
+    {
+        $header = 'extend input ' . $node->name->value . $this->printSdlDirectives($node->directives);
+        if (count($node->fields) === 0) {
+            return $header;
+        }
+        $block = $this->printSdlBlock($node->fields, fn (InputValueDefinitionNode $f) => $this->printInputValueDefinition($f));
+
+        return $header . ' ' . $block;
+    }
+
+    private function printObjectTypeDefinition(ObjectTypeDefinitionNode $node): string
+    {
+        $desc = $this->printSdlDescription($node->description);
+        $header = 'type ' . $node->name->value;
+
+        if (count($node->interfaces) > 0) {
+            $ifaces = [];
+            foreach ($node->interfaces as $iface) {
+                $ifaces[] = $iface->name->value;
+            }
+            $header .= ' implements ' . implode(' & ', $ifaces);
+        }
+
+        $header .= $this->printSdlDirectives($node->directives);
+        $block = $this->printSdlBlock($node->fields, fn (FieldDefinitionNode $f) => $this->printFieldDefinition($f));
+
+        return $desc . $header . ' ' . $block;
+    }
+
+    private function printObjectTypeExtension(ObjectTypeExtensionNode $node): string
+    {
+        $header = 'extend type ' . $node->name->value;
+
+        if (count($node->interfaces) > 0) {
+            $ifaces = [];
+            foreach ($node->interfaces as $iface) {
+                $ifaces[] = $iface->name->value;
+            }
+            $header .= ' implements ' . implode(' & ', $ifaces);
+        }
+
+        $header .= $this->printSdlDirectives($node->directives);
+
+        if (count($node->fields) === 0) {
+            return $header;
+        }
+
+        $block = $this->printSdlBlock($node->fields, fn (FieldDefinitionNode $f) => $this->printFieldDefinition($f));
+
+        return $header . ' ' . $block;
+    }
+
+    private function printInterfaceTypeDefinition(InterfaceTypeDefinitionNode $node): string
+    {
+        $desc = $this->printSdlDescription($node->description);
+        $header = 'interface ' . $node->name->value;
+
+        if (count($node->interfaces) > 0) {
+            $ifaces = [];
+            foreach ($node->interfaces as $iface) {
+                $ifaces[] = $iface->name->value;
+            }
+            $header .= ' implements ' . implode(' & ', $ifaces);
+        }
+
+        $header .= $this->printSdlDirectives($node->directives);
+        $block = $this->printSdlBlock($node->fields, fn (FieldDefinitionNode $f) => $this->printFieldDefinition($f));
+
+        return $desc . $header . ' ' . $block;
+    }
+
+    private function printInterfaceTypeExtension(InterfaceTypeExtensionNode $node): string
+    {
+        $header = 'extend interface ' . $node->name->value;
+
+        if (count($node->interfaces) > 0) {
+            $ifaces = [];
+            foreach ($node->interfaces as $iface) {
+                $ifaces[] = $iface->name->value;
+            }
+            $header .= ' implements ' . implode(' & ', $ifaces);
+        }
+
+        $header .= $this->printSdlDirectives($node->directives);
+
+        if (count($node->fields) === 0) {
+            return $header;
+        }
+
+        $block = $this->printSdlBlock($node->fields, fn (FieldDefinitionNode $f) => $this->printFieldDefinition($f));
+
+        return $header . ' ' . $block;
+    }
+
+    private function printEnumTypeDefinition(EnumTypeDefinitionNode $node): string
+    {
+        $desc = $this->printSdlDescription($node->description);
+        $header = 'enum ' . $node->name->value . $this->printSdlDirectives($node->directives);
+        $block = $this->printSdlBlock(
+            $node->values,
+            fn (EnumValueDefinitionNode $v) => $v->name->value . $this->printSdlDirectives($v->directives)
+        );
+
+        return $desc . $header . ' ' . $block;
+    }
+
+    private function printEnumTypeExtension(EnumTypeExtensionNode $node): string
+    {
+        $header = 'extend enum ' . $node->name->value . $this->printSdlDirectives($node->directives);
+
+        if (count($node->values) === 0) {
+            return $header;
+        }
+
+        $block = $this->printSdlBlock(
+            $node->values,
+            fn (EnumValueDefinitionNode $v) => $v->name->value . $this->printSdlDirectives($v->directives)
+        );
+
+        return $header . ' ' . $block;
+    }
+
+    private function printUnionTypeDefinition(UnionTypeDefinitionNode $node): string
+    {
+        $desc = $this->printSdlDescription($node->description);
+        $header = 'union ' . $node->name->value . $this->printSdlDirectives($node->directives);
+
+        if (count($node->types) === 0) {
+            return $desc . $header;
+        }
+
+        $types = [];
+        foreach ($node->types as $type) {
+            $types[] = $type->name->value;
+        }
+
+        return $desc . $header . ' = ' . implode(' | ', $types);
+    }
+
+    private function printUnionTypeExtension(UnionTypeExtensionNode $node): string
+    {
+        $header = 'extend union ' . $node->name->value . $this->printSdlDirectives($node->directives);
+
+        if (count($node->types) === 0) {
+            return $header;
+        }
+
+        $types = [];
+        foreach ($node->types as $type) {
+            $types[] = $type->name->value;
+        }
+
+        return $header . ' = ' . implode(' | ', $types);
+    }
+
+    private function printScalarTypeDefinition(ScalarTypeDefinitionNode $node): string
+    {
+        $desc = $this->printSdlDescription($node->description);
+
+        return $desc . 'scalar ' . $node->name->value . $this->printSdlDirectives($node->directives);
+    }
+
+    private function printScalarTypeExtension(ScalarTypeExtensionNode $node): string
+    {
+        return 'extend scalar ' . $node->name->value . $this->printSdlDirectives($node->directives);
+    }
+
+    private function printSchemaDefinition(SchemaDefinitionNode $node): string
+    {
+        $desc = $this->printSdlDescription($node->description);
+        $directives = $this->printSdlDirectives($node->directives);
+        $indent = $this->config->indent;
+        $opTypes = [];
+        foreach ($node->operationTypes as $opType) {
+            $opTypes[] = $indent . $opType->operation . ': ' . $opType->type->name->value;
+        }
+        $block = "{\n" . implode("\n", $opTypes) . "\n}";
+
+        return $desc . 'schema' . $directives . ' ' . $block;
+    }
+
+    private function printSchemaExtension(SchemaExtensionNode $node): string
+    {
+        $directives = $this->printSdlDirectives($node->directives);
+
+        if (count($node->operationTypes) === 0) {
+            return 'extend schema' . $directives;
+        }
+
+        $indent = $this->config->indent;
+        $opTypes = [];
+        foreach ($node->operationTypes as $opType) {
+            $opTypes[] = $indent . $opType->operation . ': ' . $opType->type->name->value;
+        }
+        $block = "{\n" . implode("\n", $opTypes) . "\n}";
+
+        return 'extend schema' . $directives . ' ' . $block;
     }
 }

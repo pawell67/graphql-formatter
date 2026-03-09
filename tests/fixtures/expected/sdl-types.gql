@@ -1,0 +1,25 @@
+input CreateUserInput {
+    name: String!
+    email: String!
+    age: Int = 0
+}
+
+type User {
+    id: ID!
+    name: String!
+    email: String
+}
+
+enum Status {
+    ACTIVE
+    INACTIVE
+    PENDING
+}
+
+scalar DateTime
+
+interface Node {
+    id: ID!
+}
+
+union SearchResult = User | Post
