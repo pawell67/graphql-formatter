@@ -1,6 +1,9 @@
 <?php
+
 declare(strict_types=1);
+
 namespace GraphQLFormatter\Tests\Unit;
+
 use GraphQLFormatter\Formatter\ImportHandler;
 use PHPUnit\Framework\TestCase;
 

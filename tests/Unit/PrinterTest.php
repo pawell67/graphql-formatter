@@ -1,9 +1,12 @@
 <?php
+
 declare(strict_types=1);
+
 namespace GraphQLFormatter\Tests\Unit;
+
+use GraphQL\Language\Parser;
 use GraphQLFormatter\Config\FormatterConfig;
 use GraphQLFormatter\Formatter\Printer;
-use GraphQL\Language\Parser;
 use PHPUnit\Framework\TestCase;
 
 class PrinterTest extends TestCase

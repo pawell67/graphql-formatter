@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace GraphQLFormatter\Config;
 
 final class FormatterConfig
@@ -13,8 +15,12 @@ final class FormatterConfig
     public readonly array $paths;
 
     private function __construct(
-        string $indent, int $printWidth, int $maxInlineArgs,
-        bool $trailingNewline, bool $normalizeKeywordCase, array $paths,
+        string $indent,
+        int $printWidth,
+        int $maxInlineArgs,
+        bool $trailingNewline,
+        bool $normalizeKeywordCase,
+        array $paths,
     ) {
         $this->indent = $indent;
         $this->printWidth = $printWidth;
@@ -31,9 +37,10 @@ final class FormatterConfig
         $indent = match ($indentRaw) {
             '2spaces' => '  ',
             '4spaces' => '    ',
-            'tab'     => "\t",
-            default   => throw new \InvalidArgumentException("Invalid indent value: {$indentRaw}"),
+            'tab' => "\t",
+            default => throw new \InvalidArgumentException("Invalid indent value: {$indentRaw}"),
         };
+
         return new self(
             indent: $indent,
             printWidth: (int) ($config['print_width'] ?? 80),
