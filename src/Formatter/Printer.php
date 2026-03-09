@@ -180,7 +180,7 @@ final class Printer
             $inline = '(' . implode(', ', $rendered) . ')';
 
             // Check total line width: indent + fieldName + inline args
-            $currentIndent = str_repeat($this->config->indent, $depth - 1);
+            $currentIndent = str_repeat($this->config->indent, $depth);
             $lineLength = strlen($currentIndent . $fieldName . $inline);
             if ($lineLength <= $this->config->printWidth) {
                 return $inline;
@@ -193,12 +193,12 @@ final class Printer
     /** @param NodeList<ArgumentNode> $args */
     private function printArgumentsMultiline(NodeList $args, int $depth): string
     {
-        $indent = str_repeat($this->config->indent, $depth);
-        $closingIndent = str_repeat($this->config->indent, $depth - 1);
+        $indent = str_repeat($this->config->indent, $depth + 1);
+        $closingIndent = str_repeat($this->config->indent, $depth);
 
         $lines = [];
         foreach ($args as $arg) {
-            $lines[] = $indent . $this->printArgument($arg, $depth);
+            $lines[] = $indent . $this->printArgument($arg, $depth + 1);
         }
 
         return "(\n" . implode("\n", $lines) . "\n" . $closingIndent . ')';

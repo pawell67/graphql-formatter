@@ -23,10 +23,7 @@ query AssetQuery($id: ID!, $locale: String = "en", $preview: Boolean) {
             }
         }
         linkedFrom {
-            entryCollection(
-                limit: 10
-                skip: 0
-            ) {
+            entryCollection(limit: 10, skip: 0) {
                 items {
                     ... on Article {
                         title
