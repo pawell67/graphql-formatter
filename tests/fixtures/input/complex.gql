@@ -1,0 +1,19 @@
+#import "fragments/asset.gql"
+#import "fragments/user.gql"
+
+query AssetQuery($id: ID!, $locale: String = "en", $preview: Boolean) {
+  asset(id: $id, locale: $locale, preview: $preview) {
+    sys { id publishedAt }
+    title
+    file { url details { size image { width height } } }
+    linkedFrom {
+      entryCollection(limit: 10, skip: 0) {
+        items {
+          ... on Article { title slug }
+          ... on Page { title url }
+        }
+      }
+    }
+    ...AssetFields
+  }
+}

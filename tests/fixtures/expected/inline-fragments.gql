@@ -1,0 +1,13 @@
+query Search {
+    search {
+        ... on User {
+            name
+            email
+        }
+        ... on Post {
+            title
+            body
+        }
+        ...CommonFields
+    }
+}

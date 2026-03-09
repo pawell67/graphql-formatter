@@ -1,0 +1,13 @@
+mutation CreateAsset {
+    createAsset(
+        input: {
+            name: "Photo"
+            meta: {
+                width: 1920
+                height: 1080
+            }
+        }
+    ) {
+        id
+    }
+}

@@ -1,0 +1,8 @@
+#import "fragments/asset.gql"
+#import "fragments/user.gql"
+
+query Q {
+    user {
+        ...UserFields
+    }
+}
