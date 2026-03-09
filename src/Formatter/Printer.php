@@ -74,22 +74,22 @@ final class Printer
         return match (true) {
             // Executable definitions
             $node instanceof OperationDefinitionNode => $this->printOperation($node),
-            $node instanceof FragmentDefinitionNode  => $this->printFragment($node),
+            $node instanceof FragmentDefinitionNode => $this->printFragment($node),
             // SDL type definitions
             $node instanceof InputObjectTypeDefinitionNode => $this->printInputObjectTypeDefinition($node),
-            $node instanceof InputObjectTypeExtensionNode  => $this->printInputObjectTypeExtension($node),
-            $node instanceof ObjectTypeDefinitionNode      => $this->printObjectTypeDefinition($node),
-            $node instanceof ObjectTypeExtensionNode       => $this->printObjectTypeExtension($node),
-            $node instanceof InterfaceTypeDefinitionNode   => $this->printInterfaceTypeDefinition($node),
-            $node instanceof InterfaceTypeExtensionNode    => $this->printInterfaceTypeExtension($node),
-            $node instanceof EnumTypeDefinitionNode        => $this->printEnumTypeDefinition($node),
-            $node instanceof EnumTypeExtensionNode         => $this->printEnumTypeExtension($node),
-            $node instanceof UnionTypeDefinitionNode       => $this->printUnionTypeDefinition($node),
-            $node instanceof UnionTypeExtensionNode        => $this->printUnionTypeExtension($node),
-            $node instanceof ScalarTypeDefinitionNode      => $this->printScalarTypeDefinition($node),
-            $node instanceof ScalarTypeExtensionNode       => $this->printScalarTypeExtension($node),
-            $node instanceof SchemaDefinitionNode          => $this->printSchemaDefinition($node),
-            $node instanceof SchemaExtensionNode           => $this->printSchemaExtension($node),
+            $node instanceof InputObjectTypeExtensionNode => $this->printInputObjectTypeExtension($node),
+            $node instanceof ObjectTypeDefinitionNode => $this->printObjectTypeDefinition($node),
+            $node instanceof ObjectTypeExtensionNode => $this->printObjectTypeExtension($node),
+            $node instanceof InterfaceTypeDefinitionNode => $this->printInterfaceTypeDefinition($node),
+            $node instanceof InterfaceTypeExtensionNode => $this->printInterfaceTypeExtension($node),
+            $node instanceof EnumTypeDefinitionNode => $this->printEnumTypeDefinition($node),
+            $node instanceof EnumTypeExtensionNode => $this->printEnumTypeExtension($node),
+            $node instanceof UnionTypeDefinitionNode => $this->printUnionTypeDefinition($node),
+            $node instanceof UnionTypeExtensionNode => $this->printUnionTypeExtension($node),
+            $node instanceof ScalarTypeDefinitionNode => $this->printScalarTypeDefinition($node),
+            $node instanceof ScalarTypeExtensionNode => $this->printScalarTypeExtension($node),
+            $node instanceof SchemaDefinitionNode => $this->printSchemaDefinition($node),
+            $node instanceof SchemaExtensionNode => $this->printSchemaExtension($node),
             default => throw new \RuntimeException('Unsupported definition node: ' . $node::class),
         };
     }
@@ -331,6 +331,7 @@ final class Printer
 
         // Block strings as triple-quoted descriptions
         $value = $description->value;
+
         return '"""' . "\n" . $value . "\n" . '"""' . "\n";
     }
 

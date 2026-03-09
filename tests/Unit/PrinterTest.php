@@ -250,8 +250,8 @@ class PrinterTest extends TestCase
     {
         $gql = 'input Foo { bar: String } query Q { field { id } }';
         $output = $this->printer->print(Parser::parse($gql));
-        $this->assertStringContainsString("input Foo", $output);
-        $this->assertStringContainsString("query Q", $output);
+        $this->assertStringContainsString('input Foo', $output);
+        $this->assertStringContainsString('query Q', $output);
         $this->assertStringContainsString("\n\n", $output);
     }
 }
