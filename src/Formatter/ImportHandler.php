@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace GraphQLFormatter\Formatter;
 
 final class ExtractResult
@@ -8,7 +10,8 @@ final class ExtractResult
     public function __construct(
         public readonly array $imports,
         public readonly string $body,
-    ) {}
+    ) {
+    }
 }
 
 final class ImportHandler
@@ -29,6 +32,7 @@ final class ImportHandler
         while (count($bodyLines) > 0 && trim($bodyLines[0]) === '') {
             array_shift($bodyLines);
         }
+
         return new ExtractResult(imports: $imports, body: implode("\n", $bodyLines));
     }
 
@@ -38,6 +42,7 @@ final class ImportHandler
         if ($imports === []) {
             return $body;
         }
+
         return implode("\n", $imports) . "\n\n" . $body;
     }
 }

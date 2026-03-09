@@ -19,5 +19,9 @@
         "psr-4": { "GraphQLFormatter\\Tests\\": "tests/" }
     },
     "bin": ["bin/graphql-formatter"],
+    "scripts": {
+        "cs-fix": "php-cs-fixer fix",
+        "cs-check": "php-cs-fixer fix --dry-run --diff"
+    },
     "config": { "sort-packages": true }
 }

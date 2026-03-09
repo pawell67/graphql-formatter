@@ -1,8 +1,9 @@
 <?php
+
 declare(strict_types=1);
+
 namespace GraphQLFormatter\Formatter;
 
-use GraphQLFormatter\Config\FormatterConfig;
 use GraphQL\Language\AST\ArgumentNode;
 use GraphQL\Language\AST\BooleanValueNode;
 use GraphQL\Language\AST\DirectiveNode;
@@ -27,10 +28,13 @@ use GraphQL\Language\AST\SelectionSetNode;
 use GraphQL\Language\AST\StringValueNode;
 use GraphQL\Language\AST\VariableDefinitionNode;
 use GraphQL\Language\AST\VariableNode;
+use GraphQLFormatter\Config\FormatterConfig;
 
 final class Printer
 {
-    public function __construct(private readonly FormatterConfig $config) {}
+    public function __construct(private readonly FormatterConfig $config)
+    {
+    }
 
     public function print(DocumentNode $document): string
     {
@@ -52,7 +56,7 @@ final class Printer
     {
         return match (true) {
             $node instanceof OperationDefinitionNode => $this->printOperation($node),
-            $node instanceof FragmentDefinitionNode  => $this->printFragment($node),
+            $node instanceof FragmentDefinitionNode => $this->printFragment($node),
             default => throw new \RuntimeException('Unsupported definition node: ' . $node::class),
         };
     }
@@ -97,6 +101,7 @@ final class Printer
         foreach ($node->directives as $directive) {
             $header .= ' ' . $this->printDirective($directive, 0);
         }
+
         return $header . ' ' . $this->printSelectionSet($node->selectionSet, 0);
     }
 
@@ -116,9 +121,9 @@ final class Printer
     private function printSelectionNode(Node $node, int $depth): string
     {
         return match (true) {
-            $node instanceof FieldNode            => $this->printField($node, $depth),
-            $node instanceof FragmentSpreadNode   => $this->printFragmentSpread($node),
-            $node instanceof InlineFragmentNode   => $this->printInlineFragment($node, $depth),
+            $node instanceof FieldNode => $this->printField($node, $depth),
+            $node instanceof FragmentSpreadNode => $this->printFragmentSpread($node),
+            $node instanceof InlineFragmentNode => $this->printInlineFragment($node, $depth),
             default => throw new \RuntimeException('Unsupported selection node: ' . $node::class),
         };
     }
@@ -154,6 +159,7 @@ final class Printer
         $typeCondition = $node->typeCondition !== null
             ? 'on ' . $node->typeCondition->name->value . ' '
             : '';
+
         return '... ' . $typeCondition . $this->printSelectionSet($node->selectionSet, $depth);
     }
 
@@ -212,15 +218,15 @@ final class Printer
     private function printValue(Node $value, int $depth): string
     {
         return match (true) {
-            $value instanceof IntValueNode     => $value->value,
-            $value instanceof FloatValueNode   => $value->value,
+            $value instanceof IntValueNode => $value->value,
+            $value instanceof FloatValueNode => $value->value,
             $value instanceof BooleanValueNode => $value->value ? 'true' : 'false',
-            $value instanceof NullValueNode    => 'null',
-            $value instanceof EnumValueNode    => $value->value,
-            $value instanceof StringValueNode  => '"' . addslashes($value->value) . '"',
-            $value instanceof VariableNode     => '$' . $value->name->value,
-            $value instanceof ListValueNode    => $this->printListValue($value, $depth),
-            $value instanceof ObjectValueNode  => $this->printObjectValue($value, $depth),
+            $value instanceof NullValueNode => 'null',
+            $value instanceof EnumValueNode => $value->value,
+            $value instanceof StringValueNode => '"' . addslashes($value->value) . '"',
+            $value instanceof VariableNode => '$' . $value->name->value,
+            $value instanceof ListValueNode => $this->printListValue($value, $depth),
+            $value instanceof ObjectValueNode => $this->printObjectValue($value, $depth),
             default => throw new \RuntimeException('Unsupported value node: ' . $value::class),
         };
     }
@@ -231,6 +237,7 @@ final class Printer
         foreach ($node->values as $value) {
             $values[] = $this->printValue($value, $depth);
         }
+
         return '[' . implode(', ', $values) . ']';
     }
 
@@ -245,6 +252,7 @@ final class Printer
         foreach ($node->fields as $field) {
             $fields[] = $indent . $field->name->value . ': ' . $this->printValue($field->value, $depth + 1);
         }
+
         return "{\n" . implode("\n", $fields) . "\n" . $closingIndent . '}';
     }
 
@@ -254,14 +262,15 @@ final class Printer
         if ($node->defaultValue !== null) {
             $result .= ' = ' . $this->printValue($node->defaultValue, 0);
         }
+
         return $result;
     }
 
     private function printType(Node $typeNode): string
     {
         return match (true) {
-            $typeNode instanceof NamedTypeNode   => $typeNode->name->value,
-            $typeNode instanceof ListTypeNode    => '[' . $this->printType($typeNode->type) . ']',
+            $typeNode instanceof NamedTypeNode => $typeNode->name->value,
+            $typeNode instanceof ListTypeNode => '[' . $this->printType($typeNode->type) . ']',
             $typeNode instanceof NonNullTypeNode => $this->printType($typeNode->type) . '!',
             default => throw new \RuntimeException('Unsupported type node: ' . $typeNode::class),
         };
@@ -273,6 +282,7 @@ final class Printer
         if (count($node->arguments) > 0) {
             $result .= $this->printArguments($node->arguments, $depth + 1, '@' . $node->name->value);
         }
+
         return $result;
     }
 }

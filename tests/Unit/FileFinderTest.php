@@ -1,6 +1,9 @@
 <?php
+
 declare(strict_types=1);
+
 namespace GraphQLFormatter\Tests\Unit;
+
 use GraphQLFormatter\Finder\FileFinder;
 use PHPUnit\Framework\TestCase;
 
@@ -20,16 +23,6 @@ class FileFinderTest extends TestCase
         $this->removeDir($this->tmpDir);
     }
 
-    private function removeDir(string $dir): void
-    {
-        foreach (scandir($dir) as $entry) {
-            if ($entry === '.' || $entry === '..') continue;
-            $path = "{$dir}/{$entry}";
-            is_dir($path) ? $this->removeDir($path) : unlink($path);
-        }
-        rmdir($dir);
-    }
-
     public function test_finds_gql_files(): void
     {
         file_put_contents($this->tmpDir . '/query.gql', 'query Q { a }');
@@ -37,7 +30,7 @@ class FileFinderTest extends TestCase
         $finder = new FileFinder([$this->tmpDir]);
         $files = $finder->find();
         $this->assertCount(2, $files);
-        $paths = array_map(fn($f) => basename($f), $files);
+        $paths = array_map(fn ($f) => basename($f), $files);
         $this->assertContains('query.gql', $paths);
         $this->assertContains('schema.graphql', $paths);
     }
@@ -76,8 +69,20 @@ class FileFinderTest extends TestCase
         file_put_contents($dir2 . '/b.gql', 'query B { b }');
         $finder = new FileFinder([$this->tmpDir, $dir2]);
         $files = $finder->find();
-        $paths = array_map(fn($f) => basename($f), $files);
+        $paths = array_map(fn ($f) => basename($f), $files);
         $this->assertContains('a.gql', $paths);
         $this->assertContains('b.gql', $paths);
+    }
+
+    private function removeDir(string $dir): void
+    {
+        foreach (scandir($dir) as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+            $path = "{$dir}/{$entry}";
+            is_dir($path) ? $this->removeDir($path) : unlink($path);
+        }
+        rmdir($dir);
     }
 }

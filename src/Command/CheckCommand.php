@@ -1,6 +1,9 @@
 <?php
+
 declare(strict_types=1);
+
 namespace GraphQLFormatter\Command;
+
 use GraphQLFormatter\Config\FormatterConfig;
 use GraphQLFormatter\Finder\FileFinder;
 use GraphQLFormatter\Formatter\GraphQLFormatter;
@@ -10,7 +13,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 final class CheckCommand extends Command
 {
-    public function __construct(private readonly FormatterConfig $config) { parent::__construct(); }
+    public function __construct(private readonly FormatterConfig $config)
+    {
+        parent::__construct();
+    }
 
     protected function configure(): void
     {
@@ -33,9 +39,11 @@ final class CheckCommand extends Command
         $output->writeln('');
         if ($unformatted === []) {
             $output->writeln('<info>All ' . count($files) . ' file(s) are properly formatted.</info>');
+
             return Command::SUCCESS;
         }
         $output->writeln('<error>' . count($unformatted) . ' of ' . count($files) . ' file(s) need formatting. Run `graphql-formatter fix` to fix them.</error>');
+
         return Command::FAILURE;
     }
 }

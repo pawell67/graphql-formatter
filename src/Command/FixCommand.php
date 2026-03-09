@@ -1,6 +1,9 @@
 <?php
+
 declare(strict_types=1);
+
 namespace GraphQLFormatter\Command;
+
 use GraphQLFormatter\Config\FormatterConfig;
 use GraphQLFormatter\Finder\FileFinder;
 use GraphQLFormatter\Formatter\GraphQLFormatter;
@@ -10,7 +13,10 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 final class FixCommand extends Command
 {
-    public function __construct(private readonly FormatterConfig $config) { parent::__construct(); }
+    public function __construct(private readonly FormatterConfig $config)
+    {
+        parent::__construct();
+    }
 
     protected function configure(): void
     {
@@ -33,7 +39,8 @@ final class FixCommand extends Command
             }
         }
         $output->writeln('');
-        $output->writeln("<info>Done.</info> {$count} file(s) fixed, " . count($files) . " file(s) scanned.");
+        $output->writeln("<info>Done.</info> {$count} file(s) fixed, " . count($files) . ' file(s) scanned.');
+
         return Command::SUCCESS;
     }
 }

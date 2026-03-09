@@ -1,8 +1,11 @@
 <?php
+
 declare(strict_types=1);
+
 namespace GraphQLFormatter\Formatter;
-use GraphQLFormatter\Config\FormatterConfig;
+
 use GraphQL\Language\Parser;
+use GraphQLFormatter\Config\FormatterConfig;
 
 final class GraphQLFormatter
 {
@@ -18,6 +21,7 @@ final class GraphQLFormatter
         $extracted = ImportHandler::extract($rawContent);
         $ast = Parser::parse($extracted->body);
         $formatted = $this->printer->print($ast);
+
         return ImportHandler::prepend($extracted->imports, $formatted);
     }
 }
