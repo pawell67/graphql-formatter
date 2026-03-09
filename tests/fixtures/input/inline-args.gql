@@ -1,0 +1,3 @@
+query GetUser(   $id:  ID! ){
+  user(  id:  $id  ){ name email }
+}
