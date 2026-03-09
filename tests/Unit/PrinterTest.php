@@ -133,4 +133,17 @@ class PrinterTest extends TestCase
         $output = $this->printer->print(Parser::parse('query Q($limit: Int = 10) { users { name } }'));
         $this->assertStringContainsString('$limit: Int = 10', $output);
     }
+
+    // Task 10: alias and fragment directives
+    public function test_field_alias_renders_correctly(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { myAlias: user { name } }'));
+        $this->assertStringContainsString('myAlias: user', $output);
+    }
+
+    public function test_fragment_with_directive(): void
+    {
+        $output = $this->printer->print(Parser::parse('fragment F on User @deprecated { name }'));
+        $this->assertStringContainsString('fragment F on User @deprecated', $output);
+    }
 }
