@@ -5,6 +5,8 @@ namespace GraphQLFormatter\Formatter;
 use GraphQLFormatter\Config\FormatterConfig;
 use GraphQL\Language\AST\DocumentNode;
 use GraphQL\Language\AST\FieldNode;
+use GraphQL\Language\AST\FragmentDefinitionNode;
+use GraphQL\Language\AST\FragmentSpreadNode;
 use GraphQL\Language\AST\Node;
 use GraphQL\Language\AST\OperationDefinitionNode;
 use GraphQL\Language\AST\SelectionSetNode;
@@ -33,6 +35,7 @@ final class Printer
     {
         return match (true) {
             $node instanceof OperationDefinitionNode => $this->printOperation($node),
+            $node instanceof FragmentDefinitionNode  => $this->printFragment($node),
             default => throw new \RuntimeException('Unsupported definition node: ' . $node::class),
         };
     }
@@ -57,6 +60,17 @@ final class Printer
         return $header . ' ' . $this->printSelectionSet($node->selectionSet, $depth);
     }
 
+    private function printFragment(FragmentDefinitionNode $node): string
+    {
+        $typeCondition = $node->typeCondition->name->value;
+        $name = $node->name->value;
+        $header = "fragment {$name} on {$typeCondition}";
+        foreach ($node->directives as $directive) {
+            $header .= ' @' . $directive->name->value;
+        }
+        return $header . ' ' . $this->printSelectionSet($node->selectionSet, 0);
+    }
+
     private function printSelectionSet(SelectionSetNode $node, int $depth): string
     {
         $indent = str_repeat($this->config->indent, $depth + 1);
@@ -73,7 +87,8 @@ final class Printer
     private function printSelectionNode(Node $node, int $depth): string
     {
         return match (true) {
-            $node instanceof FieldNode => $this->printField($node, $depth),
+            $node instanceof FieldNode          => $this->printField($node, $depth),
+            $node instanceof FragmentSpreadNode => $this->printFragmentSpread($node),
             default => throw new \RuntimeException('Unsupported selection node: ' . $node::class),
         };
     }
@@ -89,5 +104,10 @@ final class Printer
         }
 
         return $result;
+    }
+
+    private function printFragmentSpread(FragmentSpreadNode $node): string
+    {
+        return '...' . $node->name->value;
     }
 }

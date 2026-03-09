@@ -40,4 +40,17 @@ class PrinterTest extends TestCase
         $this->assertStringContainsString('query A', $output);
         $this->assertStringContainsString('query B', $output);
     }
+
+    // Task 05: fragments
+    public function test_fragment_definition_renders_correctly(): void
+    {
+        $ast = Parser::parse('fragment HeroFields on Hero { name age }');
+        $this->assertSame("fragment HeroFields on Hero {\n    name\n    age\n}\n", $this->printer->print($ast));
+    }
+
+    public function test_fragment_spread_renders_with_ellipsis(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { hero { ...HeroFields } }'));
+        $this->assertStringContainsString('...HeroFields', $output);
+    }
 }
