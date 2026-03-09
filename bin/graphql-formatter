@@ -1,0 +1,20 @@
+#!/usr/bin/env php
+<?php
+declare(strict_types=1);
+
+use GraphQLFormatter\Command\CheckCommand;
+use GraphQLFormatter\Command\FixCommand;
+use GraphQLFormatter\Config\FormatterConfig;
+use Symfony\Component\Console\Application;
+
+foreach ([__DIR__ . '/../vendor/autoload.php', __DIR__ . '/../../autoload.php'] as $autoload) {
+    if (file_exists($autoload)) { require $autoload; break; }
+}
+
+$configPath = getcwd() . '/graphql-formatter.php';
+$config = FormatterConfig::fromArray(file_exists($configPath) ? require $configPath : []);
+
+$app = new Application('graphql-formatter', '1.0.0');
+$app->add(new FixCommand($config));
+$app->add(new CheckCommand($config));
+$app->run();
