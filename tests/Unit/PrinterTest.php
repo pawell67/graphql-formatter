@@ -89,4 +89,17 @@ class PrinterTest extends TestCase
         $this->assertStringContainsString("createUser(\n", $output);
         $this->assertStringContainsString('name: "Bob"', $output);
     }
+
+    // Task 08: inline fragments
+    public function test_inline_fragment_renders_on_own_line(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { node { ... on User { name } } }'));
+        $this->assertStringContainsString('... on User', $output);
+    }
+
+    public function test_inline_fragment_without_type_condition(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { node { ... { name } } }'));
+        $this->assertStringContainsString("... {\n", $output);
+    }
 }

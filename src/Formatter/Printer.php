@@ -11,6 +11,7 @@ use GraphQL\Language\AST\FieldNode;
 use GraphQL\Language\AST\FloatValueNode;
 use GraphQL\Language\AST\FragmentDefinitionNode;
 use GraphQL\Language\AST\FragmentSpreadNode;
+use GraphQL\Language\AST\InlineFragmentNode;
 use GraphQL\Language\AST\IntValueNode;
 use GraphQL\Language\AST\ListValueNode;
 use GraphQL\Language\AST\Node;
@@ -98,8 +99,9 @@ final class Printer
     private function printSelectionNode(Node $node, int $depth): string
     {
         return match (true) {
-            $node instanceof FieldNode          => $this->printField($node, $depth),
-            $node instanceof FragmentSpreadNode => $this->printFragmentSpread($node),
+            $node instanceof FieldNode            => $this->printField($node, $depth),
+            $node instanceof FragmentSpreadNode   => $this->printFragmentSpread($node),
+            $node instanceof InlineFragmentNode   => $this->printInlineFragment($node, $depth),
             default => throw new \RuntimeException('Unsupported selection node: ' . $node::class),
         };
     }
@@ -124,6 +126,14 @@ final class Printer
     private function printFragmentSpread(FragmentSpreadNode $node): string
     {
         return '...' . $node->name->value;
+    }
+
+    private function printInlineFragment(InlineFragmentNode $node, int $depth): string
+    {
+        $typeCondition = $node->typeCondition !== null
+            ? 'on ' . $node->typeCondition->name->value . ' '
+            : '';
+        return '... ' . $typeCondition . $this->printSelectionSet($node->selectionSet, $depth);
     }
 
     /** @param NodeList<ArgumentNode> $args */
