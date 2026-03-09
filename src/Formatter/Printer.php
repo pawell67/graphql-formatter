@@ -5,6 +5,7 @@ namespace GraphQLFormatter\Formatter;
 use GraphQLFormatter\Config\FormatterConfig;
 use GraphQL\Language\AST\ArgumentNode;
 use GraphQL\Language\AST\BooleanValueNode;
+use GraphQL\Language\AST\DirectiveNode;
 use GraphQL\Language\AST\DocumentNode;
 use GraphQL\Language\AST\EnumValueNode;
 use GraphQL\Language\AST\FieldNode;
@@ -13,14 +14,18 @@ use GraphQL\Language\AST\FragmentDefinitionNode;
 use GraphQL\Language\AST\FragmentSpreadNode;
 use GraphQL\Language\AST\InlineFragmentNode;
 use GraphQL\Language\AST\IntValueNode;
+use GraphQL\Language\AST\ListTypeNode;
 use GraphQL\Language\AST\ListValueNode;
+use GraphQL\Language\AST\NamedTypeNode;
 use GraphQL\Language\AST\Node;
 use GraphQL\Language\AST\NodeList;
+use GraphQL\Language\AST\NonNullTypeNode;
 use GraphQL\Language\AST\NullValueNode;
 use GraphQL\Language\AST\ObjectValueNode;
 use GraphQL\Language\AST\OperationDefinitionNode;
 use GraphQL\Language\AST\SelectionSetNode;
 use GraphQL\Language\AST\StringValueNode;
+use GraphQL\Language\AST\VariableDefinitionNode;
 use GraphQL\Language\AST\VariableNode;
 
 final class Printer
@@ -69,6 +74,18 @@ final class Printer
             $header .= ' ' . $node->name->value;
         }
 
+        if (count($node->variableDefinitions) > 0) {
+            $vars = [];
+            foreach ($node->variableDefinitions as $varDef) {
+                $vars[] = $this->printVariableDefinition($varDef);
+            }
+            $header .= '(' . implode(', ', $vars) . ')';
+        }
+
+        foreach ($node->directives as $directive) {
+            $header .= ' ' . $this->printDirective($directive, $depth);
+        }
+
         return $header . ' ' . $this->printSelectionSet($node->selectionSet, $depth);
     }
 
@@ -78,7 +95,7 @@ final class Printer
         $name = $node->name->value;
         $header = "fragment {$name} on {$typeCondition}";
         foreach ($node->directives as $directive) {
-            $header .= ' @' . $directive->name->value;
+            $header .= ' ' . $this->printDirective($directive, 0);
         }
         return $header . ' ' . $this->printSelectionSet($node->selectionSet, 0);
     }
@@ -114,6 +131,10 @@ final class Printer
 
         if (count($node->arguments) > 0) {
             $result .= $this->printArguments($node->arguments, $depth, $prefix . $name);
+        }
+
+        foreach ($node->directives as $directive) {
+            $result .= ' ' . $this->printDirective($directive, $depth);
         }
 
         if ($node->selectionSet !== null) {
@@ -225,5 +246,33 @@ final class Printer
             $fields[] = $indent . $field->name->value . ': ' . $this->printValue($field->value, $depth + 1);
         }
         return "{\n" . implode("\n", $fields) . "\n" . $closingIndent . '}';
+    }
+
+    private function printVariableDefinition(VariableDefinitionNode $node): string
+    {
+        $result = '$' . $node->variable->name->value . ': ' . $this->printType($node->type);
+        if ($node->defaultValue !== null) {
+            $result .= ' = ' . $this->printValue($node->defaultValue, 0);
+        }
+        return $result;
+    }
+
+    private function printType(Node $typeNode): string
+    {
+        return match (true) {
+            $typeNode instanceof NamedTypeNode   => $typeNode->name->value,
+            $typeNode instanceof ListTypeNode    => '[' . $this->printType($typeNode->type) . ']',
+            $typeNode instanceof NonNullTypeNode => $this->printType($typeNode->type) . '!',
+            default => throw new \RuntimeException('Unsupported type node: ' . $typeNode::class),
+        };
+    }
+
+    private function printDirective(DirectiveNode $node, int $depth): string
+    {
+        $result = '@' . $node->name->value;
+        if (count($node->arguments) > 0) {
+            $result .= $this->printArguments($node->arguments, $depth + 1, '@' . $node->name->value);
+        }
+        return $result;
     }
 }

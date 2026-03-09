@@ -102,4 +102,35 @@ class PrinterTest extends TestCase
         $output = $this->printer->print(Parser::parse('query Q { node { ... { name } } }'));
         $this->assertStringContainsString("... {\n", $output);
     }
+
+    // Task 09: variable definitions and directives
+    public function test_operation_with_variable_definitions(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q($id: ID!, $limit: Int) { users(id: $id) { name } }'));
+        $this->assertStringContainsString('query Q($id: ID!, $limit: Int)', $output);
+    }
+
+    public function test_non_null_type_renders_with_exclamation(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q($id: ID!) { user(id: $id) { name } }'));
+        $this->assertStringContainsString('$id: ID!', $output);
+    }
+
+    public function test_list_type_renders_with_brackets(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q($ids: [ID!]!) { users(ids: $ids) { name } }'));
+        $this->assertStringContainsString('$ids: [ID!]!', $output);
+    }
+
+    public function test_field_directive_renders_inline(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { user { name @include(if: true) } }'));
+        $this->assertStringContainsString('@include(if: true)', $output);
+    }
+
+    public function test_variable_with_default_value(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q($limit: Int = 10) { users { name } }'));
+        $this->assertStringContainsString('$limit: Int = 10', $output);
+    }
 }
