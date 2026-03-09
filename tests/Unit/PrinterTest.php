@@ -53,4 +53,32 @@ class PrinterTest extends TestCase
         $output = $this->printer->print(Parser::parse('query Q { hero { ...HeroFields } }'));
         $this->assertStringContainsString('...HeroFields', $output);
     }
+
+    // Task 06: arguments
+    public function test_single_arg_renders_inline(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { user(id: 1) { name } }'));
+        $this->assertStringContainsString('user(id: 1)', $output);
+    }
+
+    public function test_two_args_within_max_inline_renders_inline(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { user(id: 1, active: true) { name } }'));
+        $this->assertStringContainsString('user(id: 1, active: true)', $output);
+    }
+
+    public function test_three_args_exceeds_max_inline_renders_multiline(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { user(id: 1, name: "Bob", active: true) { name } }'));
+        $this->assertStringNotContainsString('user(id: 1, name: "Bob", active: true)', $output);
+        $this->assertStringContainsString('id: 1', $output);
+        $this->assertStringContainsString('name: "Bob"', $output);
+    }
+
+    public function test_args_exceeding_print_width_expand_to_multiline(): void
+    {
+        $printer = new Printer(FormatterConfig::fromArray(['print_width' => 30]));
+        $output = $printer->print(Parser::parse('query Q { findUser(id: "very-long-identifier-string") { name } }'));
+        $this->assertStringNotContainsString('findUser(id: "very-long-identifier-string")', $output);
+    }
 }

@@ -3,13 +3,24 @@ declare(strict_types=1);
 namespace GraphQLFormatter\Formatter;
 
 use GraphQLFormatter\Config\FormatterConfig;
+use GraphQL\Language\AST\ArgumentNode;
+use GraphQL\Language\AST\BooleanValueNode;
 use GraphQL\Language\AST\DocumentNode;
+use GraphQL\Language\AST\EnumValueNode;
 use GraphQL\Language\AST\FieldNode;
+use GraphQL\Language\AST\FloatValueNode;
 use GraphQL\Language\AST\FragmentDefinitionNode;
 use GraphQL\Language\AST\FragmentSpreadNode;
+use GraphQL\Language\AST\IntValueNode;
+use GraphQL\Language\AST\ListValueNode;
 use GraphQL\Language\AST\Node;
+use GraphQL\Language\AST\NodeList;
+use GraphQL\Language\AST\NullValueNode;
+use GraphQL\Language\AST\ObjectValueNode;
 use GraphQL\Language\AST\OperationDefinitionNode;
 use GraphQL\Language\AST\SelectionSetNode;
+use GraphQL\Language\AST\StringValueNode;
+use GraphQL\Language\AST\VariableNode;
 
 final class Printer
 {
@@ -99,6 +110,10 @@ final class Printer
         $name = $node->name->value;
         $result = $prefix . $name;
 
+        if (count($node->arguments) > 0) {
+            $result .= $this->printArguments($node->arguments, $depth, $prefix . $name);
+        }
+
         if ($node->selectionSet !== null) {
             $result .= ' ' . $this->printSelectionSet($node->selectionSet, $depth);
         }
@@ -109,5 +124,96 @@ final class Printer
     private function printFragmentSpread(FragmentSpreadNode $node): string
     {
         return '...' . $node->name->value;
+    }
+
+    /** @param NodeList<ArgumentNode> $args */
+    private function printArguments(NodeList $args, int $depth, string $fieldName = ''): string
+    {
+        if (count($args) === 0) {
+            return '';
+        }
+
+        // ObjectValueNode args always force multiline
+        foreach ($args as $arg) {
+            if ($arg->value instanceof ObjectValueNode) {
+                return $this->printArgumentsMultiline($args, $depth);
+            }
+        }
+
+        // Try inline if within count threshold
+        if (count($args) <= $this->config->maxInlineArgs) {
+            $rendered = [];
+            foreach ($args as $arg) {
+                $rendered[] = $this->printArgument($arg, $depth);
+            }
+            $inline = '(' . implode(', ', $rendered) . ')';
+
+            // Check total line width: indent + fieldName + inline args
+            $currentIndent = str_repeat($this->config->indent, $depth - 1);
+            $lineLength = strlen($currentIndent . $fieldName . $inline);
+            if ($lineLength <= $this->config->printWidth) {
+                return $inline;
+            }
+        }
+
+        return $this->printArgumentsMultiline($args, $depth);
+    }
+
+    /** @param NodeList<ArgumentNode> $args */
+    private function printArgumentsMultiline(NodeList $args, int $depth): string
+    {
+        $indent = str_repeat($this->config->indent, $depth);
+        $closingIndent = str_repeat($this->config->indent, $depth - 1);
+
+        $lines = [];
+        foreach ($args as $arg) {
+            $lines[] = $indent . $this->printArgument($arg, $depth);
+        }
+
+        return "(\n" . implode("\n", $lines) . "\n" . $closingIndent . ')';
+    }
+
+    private function printArgument(ArgumentNode $arg, int $depth): string
+    {
+        return $arg->name->value . ': ' . $this->printValue($arg->value, $depth);
+    }
+
+    private function printValue(Node $value, int $depth): string
+    {
+        return match (true) {
+            $value instanceof IntValueNode     => $value->value,
+            $value instanceof FloatValueNode   => $value->value,
+            $value instanceof BooleanValueNode => $value->value ? 'true' : 'false',
+            $value instanceof NullValueNode    => 'null',
+            $value instanceof EnumValueNode    => $value->value,
+            $value instanceof StringValueNode  => '"' . addslashes($value->value) . '"',
+            $value instanceof VariableNode     => '$' . $value->name->value,
+            $value instanceof ListValueNode    => $this->printListValue($value, $depth),
+            $value instanceof ObjectValueNode  => $this->printObjectValue($value, $depth),
+            default => throw new \RuntimeException('Unsupported value node: ' . $value::class),
+        };
+    }
+
+    private function printListValue(ListValueNode $node, int $depth): string
+    {
+        $values = [];
+        foreach ($node->values as $value) {
+            $values[] = $this->printValue($value, $depth);
+        }
+        return '[' . implode(', ', $values) . ']';
+    }
+
+    private function printObjectValue(ObjectValueNode $node, int $depth): string
+    {
+        if (count($node->fields) === 0) {
+            return '{}';
+        }
+        $indent = str_repeat($this->config->indent, $depth + 1);
+        $closingIndent = str_repeat($this->config->indent, $depth);
+        $fields = [];
+        foreach ($node->fields as $field) {
+            $fields[] = $indent . $field->name->value . ': ' . $this->printValue($field->value, $depth + 1);
+        }
+        return "{\n" . implode("\n", $fields) . "\n" . $closingIndent . '}';
     }
 }
