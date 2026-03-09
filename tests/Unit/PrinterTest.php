@@ -146,4 +146,29 @@ class PrinterTest extends TestCase
         $output = $this->printer->print(Parser::parse('fragment F on User @deprecated { name }'));
         $this->assertStringContainsString('fragment F on User @deprecated', $output);
     }
+
+    // Task 11: idempotency
+    public function test_formatting_is_idempotent_simple(): void
+    {
+        $gql = 'query GetUser($id: ID!) { user(id: $id) { name email } }';
+        $first = $this->printer->print(Parser::parse($gql));
+        $second = $this->printer->print(Parser::parse($first));
+        $this->assertSame($first, $second);
+    }
+
+    public function test_formatting_is_idempotent_with_fragments(): void
+    {
+        $gql = 'fragment F on User { name } query Q { user { ...F } }';
+        $first = $this->printer->print(Parser::parse($gql));
+        $second = $this->printer->print(Parser::parse($first));
+        $this->assertSame($first, $second);
+    }
+
+    public function test_formatting_is_idempotent_with_args(): void
+    {
+        $gql = 'query Q($a: String, $b: Int, $c: Boolean) { field(x: $a, y: $b, z: $c) { id } }';
+        $first = $this->printer->print(Parser::parse($gql));
+        $second = $this->printer->print(Parser::parse($first));
+        $this->assertSame($first, $second);
+    }
 }
