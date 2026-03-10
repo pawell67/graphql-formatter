@@ -90,12 +90,29 @@ class PublishConfigCommandTest extends TestCase
         $this->assertArrayHasKey('paths', $result);
     }
 
-    public function test_output_confirms_file_was_published(): void
+    public function test_output_uses_laravel_info_style_on_success(): void
     {
         $command = new PublishConfigCommand();
         $tester = new CommandTester($command);
         $tester->execute(['--target-dir' => $this->tmpDir]);
 
-        $this->assertStringContainsString('graphql-formatter.php', $tester->getDisplay());
+        $display = $tester->getDisplay();
+        // Laravel style: INFO  Copying file [src] to [dest]
+        $this->assertStringContainsString('INFO', $display);
+        $this->assertStringContainsString('graphql-formatter.php', $display);
+    }
+
+    public function test_output_uses_laravel_warn_style_when_file_exists(): void
+    {
+        file_put_contents($this->tmpDir . '/graphql-formatter.php', '<?php return [];');
+
+        $command = new PublishConfigCommand();
+        $tester = new CommandTester($command);
+        $tester->execute(['--target-dir' => $this->tmpDir]);
+
+        $display = $tester->getDisplay();
+        // Laravel style: WARN  File [x] already exists
+        $this->assertStringContainsString('WARN', $display);
+        $this->assertStringContainsString('graphql-formatter.php', $display);
     }
 }

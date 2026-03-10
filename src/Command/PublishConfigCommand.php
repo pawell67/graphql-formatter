@@ -8,6 +8,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 final class PublishConfigCommand extends Command
 {
@@ -22,13 +23,14 @@ final class PublishConfigCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $io = new SymfonyStyle($input, $output);
+
         $targetDir = $input->getOption('target-dir');
         $target = rtrim($targetDir, '/') . '/graphql-formatter.php';
         $force = (bool) $input->getOption('force');
 
         if (file_exists($target) && !$force) {
-            $output->writeln("<error>Config file already exists:</error> {$target}");
-            $output->writeln('Use <info>--force</info> to overwrite.');
+            $io->warning(sprintf('File [%s] already exists. Use --force to overwrite.', $target));
 
             return Command::FAILURE;
         }
@@ -36,7 +38,7 @@ final class PublishConfigCommand extends Command
         $source = $this->findExampleConfig();
         copy($source, $target);
 
-        $output->writeln("<info>Published:</info> {$target}");
+        $io->info(sprintf('Copying file [%s] to [%s]', basename($source), $target));
 
         return Command::SUCCESS;
     }
