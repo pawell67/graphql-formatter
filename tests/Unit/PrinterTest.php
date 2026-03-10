@@ -135,9 +135,9 @@ class PrinterTest extends TestCase
         // 3 vars exceeds default maxInlineArgs=2 → should expand to multiline
         $output = $this->printer->print(Parser::parse('query Q($a: String!, $b: Int!, $c: Boolean!) { field { id } }'));
         $this->assertStringNotContainsString('query Q($a: String!, $b: Int!, $c: Boolean!)', $output);
-        $this->assertStringContainsString("\$a: String!", $output);
-        $this->assertStringContainsString("\$b: Int!", $output);
-        $this->assertStringContainsString("\$c: Boolean!", $output);
+        $this->assertStringContainsString('$a: String!', $output);
+        $this->assertStringContainsString('$b: Int!', $output);
+        $this->assertStringContainsString('$c: Boolean!', $output);
     }
 
     public function test_operation_vars_exceeding_print_width_renders_multiline(): void
