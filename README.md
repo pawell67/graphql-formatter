@@ -198,6 +198,14 @@ enum UserRole {
 ## Development
 
 ```bash
+git clone https://github.com/pawell67/graphql-formatter.git
+cd graphql-formatter
 composer install
 ./vendor/bin/phpunit tests/
 ```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution guide.
+
+## License
+
+[MIT](LICENSE) © Pawel Wankiewicz
