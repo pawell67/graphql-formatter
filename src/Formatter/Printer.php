@@ -116,7 +116,7 @@ final class Printer
             foreach ($node->variableDefinitions as $varDef) {
                 $vars[] = $this->printVariableDefinition($varDef);
             }
-            $header .= '(' . implode(', ', $vars) . ')';
+            $header .= $this->formatVarDefinitions($vars, $header);
         }
 
         foreach ($node->directives as $directive) {
@@ -124,6 +124,24 @@ final class Printer
         }
 
         return $header . ' ' . $this->printSelectionSet($node->selectionSet, $depth);
+    }
+
+    /** @param list<string> $vars */
+    private function formatVarDefinitions(array $vars, string $operationKeyword): string
+    {
+        $inline = '(' . implode(', ', $vars) . ')';
+
+        if (count($vars) <= $this->config->maxInlineArgs) {
+            $lineLength = strlen($operationKeyword . $inline);
+            if ($lineLength <= $this->config->printWidth) {
+                return $inline;
+            }
+        }
+
+        $indent = $this->config->indent;
+        $lines = array_map(fn (string $v) => $indent . $v, $vars);
+
+        return "(\n" . implode("\n", $lines) . "\n)";
     }
 
     private function printFragment(FragmentDefinitionNode $node): string

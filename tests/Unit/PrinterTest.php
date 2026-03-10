@@ -107,10 +107,28 @@ class PrinterTest extends TestCase
     }
 
     // Task 09: variable definitions and directives
-    public function test_operation_with_variable_definitions(): void
+    public function test_operation_with_variable_definitions_within_max_renders_inline(): void
     {
         $output = $this->printer->print(Parser::parse('query Q($id: ID!, $limit: Int) { users(id: $id) { name } }'));
         $this->assertStringContainsString('query Q($id: ID!, $limit: Int)', $output);
+    }
+
+    public function test_operation_with_more_than_max_inline_vars_renders_multiline(): void
+    {
+        // 3 vars exceeds default maxInlineArgs=2 → should expand to multiline
+        $output = $this->printer->print(Parser::parse('query Q($a: String!, $b: Int!, $c: Boolean!) { field { id } }'));
+        $this->assertStringNotContainsString('query Q($a: String!, $b: Int!, $c: Boolean!)', $output);
+        $this->assertStringContainsString("\$a: String!", $output);
+        $this->assertStringContainsString("\$b: Int!", $output);
+        $this->assertStringContainsString("\$c: Boolean!", $output);
+    }
+
+    public function test_operation_vars_exceeding_print_width_renders_multiline(): void
+    {
+        $printer = new Printer(FormatterConfig::fromArray(['print_width' => 30]));
+        $output = $printer->print(Parser::parse('query Q($longVarName: VeryLongTypeName!) { field { id } }'));
+        $this->assertStringNotContainsString('query Q($longVarName: VeryLongTypeName!)', $output);
+        $this->assertStringContainsString('$longVarName: VeryLongTypeName!', $output);
     }
 
     public function test_non_null_type_renders_with_exclamation(): void

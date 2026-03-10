@@ -1,4 +1,8 @@
-query FindUsers($name: String, $email: String, $active: Boolean) {
+query FindUsers(
+    $name: String
+    $email: String
+    $active: Boolean
+) {
     users(
         name: $name
         email: $email

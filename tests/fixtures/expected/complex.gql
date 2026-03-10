@@ -1,7 +1,11 @@
 #import "fragments/asset.gql"
 #import "fragments/user.gql"
 
-query AssetQuery($id: ID!, $locale: String = "en", $preview: Boolean) {
+query AssetQuery(
+    $id: ID!
+    $locale: String = "en"
+    $preview: Boolean
+) {
     asset(
         id: $id
         locale: $locale
