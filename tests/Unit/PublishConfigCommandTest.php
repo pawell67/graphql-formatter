@@ -20,11 +20,22 @@ class PublishConfigCommandTest extends TestCase
 
     protected function tearDown(): void
     {
-        $target = $this->tmpDir . '/graphql-formatter.php';
-        if (file_exists($target)) {
-            unlink($target);
+        $this->removeDir($this->tmpDir);
+    }
+
+    private function removeDir(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
         }
-        rmdir($this->tmpDir);
+        foreach (scandir($dir) as $entry) {
+            if ($entry === '.' || $entry === '..') {
+                continue;
+            }
+            $path = "{$dir}/{$entry}";
+            is_dir($path) ? $this->removeDir($path) : unlink($path);
+        }
+        rmdir($dir);
     }
 
     public function test_copies_config_file_to_target_directory(): void
@@ -114,5 +125,25 @@ class PublishConfigCommandTest extends TestCase
         // Laravel style: WARN  File [x] already exists
         $this->assertStringContainsString('WARN', $display);
         $this->assertStringContainsString('graphql-formatter.php', $display);
+    }
+
+    public function test_default_target_is_config_subdirectory(): void
+    {
+        // Without --target-dir, publishes to config/graphql-formatter.php
+        $command = new PublishConfigCommand($this->tmpDir);
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        $this->assertFileExists($this->tmpDir . '/config/graphql-formatter.php');
+        $this->assertSame(0, $tester->getStatusCode());
+    }
+
+    public function test_creates_config_directory_if_missing(): void
+    {
+        $command = new PublishConfigCommand($this->tmpDir);
+        $tester = new CommandTester($command);
+        $tester->execute([]);
+
+        $this->assertDirectoryExists($this->tmpDir . '/config');
     }
 }

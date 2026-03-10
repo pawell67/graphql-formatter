@@ -12,27 +12,39 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 final class PublishConfigCommand extends Command
 {
+    public function __construct(private readonly ?string $baseDir = null)
+    {
+        parent::__construct();
+    }
+
     protected function configure(): void
     {
         $this
             ->setName('publish-config')
-            ->setDescription('Publish a graphql-formatter.php config file to your project')
+            ->setDescription('Publish a graphql-formatter.php config file to your project\'s config/ directory')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing config file')
-            ->addOption('target-dir', null, InputOption::VALUE_REQUIRED, 'Directory to publish config into', getcwd());
+            ->addOption('target-dir', null, InputOption::VALUE_REQUIRED, 'Override the target directory (default: <base>/config)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
-        $targetDir = $input->getOption('target-dir');
-        $target = rtrim($targetDir, '/') . '/graphql-formatter.php';
+        $targetDir = $input->getOption('target-dir')
+            ?? ($this->baseDir ?? getcwd()) . '/config';
+
+        $targetDir = rtrim($targetDir, '/');
+        $target = $targetDir . '/graphql-formatter.php';
         $force = (bool) $input->getOption('force');
 
         if (file_exists($target) && !$force) {
             $io->warning(sprintf('File [%s] already exists. Use --force to overwrite.', $target));
 
             return Command::FAILURE;
+        }
+
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0755, true);
         }
 
         $source = $this->findExampleConfig();

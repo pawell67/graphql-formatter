@@ -15,8 +15,15 @@ foreach ([
     if (file_exists($autoload)) { require $autoload; break; }
 }
 
-$configPath = getcwd() . '/graphql-formatter.php';
-$config = FormatterConfig::fromArray(file_exists($configPath) ? require $configPath : []);
+// Look for config in config/ first (Laravel convention), then project root (legacy)
+$configPath = null;
+foreach ([getcwd() . '/config/graphql-formatter.php', getcwd() . '/graphql-formatter.php'] as $candidate) {
+    if (file_exists($candidate)) {
+        $configPath = $candidate;
+        break;
+    }
+}
+$config = FormatterConfig::fromArray($configPath !== null ? require $configPath : []);
 
 $app = new Application('graphql-formatter', '1.0.0');
 $app->add(new FixCommand($config));
