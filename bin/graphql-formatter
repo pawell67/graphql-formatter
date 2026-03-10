@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use GraphQLFormatter\Command\CheckCommand;
 use GraphQLFormatter\Command\FixCommand;
+use GraphQLFormatter\Command\PublishConfigCommand;
 use GraphQLFormatter\Config\FormatterConfig;
 use Symfony\Component\Console\Application;
 
@@ -20,4 +21,5 @@ $config = FormatterConfig::fromArray(file_exists($configPath) ? require $configP
 $app = new Application('graphql-formatter', '1.0.0');
 $app->add(new FixCommand($config));
 $app->add(new CheckCommand($config));
+$app->add(new PublishConfigCommand());
 $app->run();
