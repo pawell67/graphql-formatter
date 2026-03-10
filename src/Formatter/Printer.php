@@ -284,6 +284,24 @@ final class Printer
 
     private function printListValue(ListValueNode $node, int $depth): string
     {
+        if (count($node->values) === 0) {
+            return '[]';
+        }
+
+        // If any item is an object, render one per line
+        foreach ($node->values as $value) {
+            if ($value instanceof ObjectValueNode) {
+                $indent = str_repeat($this->config->indent, $depth + 1);
+                $closingIndent = str_repeat($this->config->indent, $depth);
+                $lines = [];
+                foreach ($node->values as $v) {
+                    $lines[] = $indent . $this->printValue($v, $depth + 1);
+                }
+
+                return "[\n" . implode("\n", $lines) . "\n" . $closingIndent . ']';
+            }
+        }
+
         $values = [];
         foreach ($node->values as $value) {
             $values[] = $this->printValue($value, $depth);

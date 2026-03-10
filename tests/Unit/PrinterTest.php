@@ -93,6 +93,23 @@ class PrinterTest extends TestCase
         $this->assertStringContainsString('name: "Bob"', $output);
     }
 
+    public function test_list_of_scalars_renders_inline(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { field(ids: ["a", "b", "c"]) { id } }'));
+        $this->assertStringContainsString('ids: ["a", "b", "c"]', $output);
+    }
+
+    public function test_list_of_objects_renders_one_per_line(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { field(filter: [{ active: true }, { id: 1 }]) { id } }'));
+        // Each object on its own line inside [...]
+        $this->assertStringContainsString("[\n", $output);
+        $this->assertStringContainsString('active: true', $output);
+        $this->assertStringContainsString('id: 1', $output);
+        // NOT all on one line
+        $this->assertStringNotContainsString('[{ active: true }, { id: 1 }]', $output);
+    }
+
     // Task 08: inline fragments
     public function test_inline_fragment_renders_on_own_line(): void
     {
