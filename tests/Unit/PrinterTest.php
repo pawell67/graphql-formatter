@@ -289,4 +289,68 @@ class PrinterTest extends TestCase
         $this->assertStringContainsString('query Q', $output);
         $this->assertStringContainsString("\n\n", $output);
     }
+
+    // Comments
+    public function test_leading_comment_before_definition_is_preserved(): void
+    {
+        $ast = Parser::parse("# file header\nquery Q { field { id } }");
+        $output = $this->printer->print($ast);
+        $this->assertStringStartsWith("# file header\n", $output);
+        $this->assertStringContainsString('query Q', $output);
+    }
+
+    public function test_multiple_leading_comments_before_definition_are_preserved(): void
+    {
+        $ast = Parser::parse("# line 1\n# line 2\nquery Q { field { id } }");
+        $output = $this->printer->print($ast);
+        $this->assertStringStartsWith("# line 1\n# line 2\n", $output);
+    }
+
+    public function test_leading_comment_before_second_definition_is_preserved(): void
+    {
+        $ast = Parser::parse("query A { a }\n# comment for B\nquery B { b }");
+        $output = $this->printer->print($ast);
+        $this->assertStringContainsString("# comment for B\nquery B", $output);
+    }
+
+    public function test_comment_inside_selection_set_is_preserved(): void
+    {
+        $ast = Parser::parse("query Q {\n# before field\nfield { id } }");
+        $output = $this->printer->print($ast);
+        $this->assertStringContainsString("# before field\n", $output);
+        $this->assertStringContainsString('field', $output);
+    }
+
+    public function test_trailing_inline_comment_on_field_is_preserved(): void
+    {
+        $ast = Parser::parse("query Q { field { name # inline\n } }");
+        $output = $this->printer->print($ast);
+        $this->assertStringContainsString('name # inline', $output);
+    }
+
+    public function test_trailing_comment_is_not_duplicated_as_leading_comment(): void
+    {
+        $ast = Parser::parse("query Q { field { name # trailing\nemail } }");
+        $output = $this->printer->print($ast);
+        $this->assertStringContainsString('name # trailing', $output);
+        // The comment should appear exactly once, not also as a leading comment of email
+        $this->assertSame(1, substr_count($output, '# trailing'));
+    }
+
+    public function test_comments_in_sdl_type_are_preserved(): void
+    {
+        $ast = Parser::parse("# before type\ntype User {\n# before id\nid: ID! name: String! # trailing\n}");
+        $output = $this->printer->print($ast);
+        $this->assertStringStartsWith("# before type\n", $output);
+        $this->assertStringContainsString("# before id\n", $output);
+        $this->assertStringContainsString('name: String! # trailing', $output);
+    }
+
+    public function test_comment_formatting_is_idempotent(): void
+    {
+        $gql = "# file comment\nquery GetUser(\$id: ID!) { # before user\nuser(id: \$id) { name # inline\nemail } }";
+        $first = $this->printer->print(Parser::parse($gql));
+        $second = $this->printer->print(Parser::parse($first));
+        $this->assertSame($first, $second);
+    }
 }

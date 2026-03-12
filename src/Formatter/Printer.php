@@ -45,6 +45,7 @@ use GraphQL\Language\AST\UnionTypeDefinitionNode;
 use GraphQL\Language\AST\UnionTypeExtensionNode;
 use GraphQL\Language\AST\VariableDefinitionNode;
 use GraphQL\Language\AST\VariableNode;
+use GraphQL\Language\Token;
 use GraphQLFormatter\Config\FormatterConfig;
 
 final class Printer
@@ -71,7 +72,7 @@ final class Printer
 
     private function printDefinition(Node $node): string
     {
-        return match (true) {
+        $definition = match (true) {
             // Executable definitions
             $node instanceof OperationDefinitionNode => $this->printOperation($node),
             $node instanceof FragmentDefinitionNode => $this->printFragment($node),
@@ -92,6 +93,13 @@ final class Printer
             $node instanceof SchemaExtensionNode => $this->printSchemaExtension($node),
             default => throw new \RuntimeException('Unsupported definition node: ' . $node::class),
         };
+
+        $leadingComments = $this->getLeadingComments($node);
+        if ($leadingComments !== []) {
+            return implode("\n", $leadingComments) . "\n" . $definition;
+        }
+
+        return $definition;
     }
 
     private function printOperation(OperationDefinitionNode $node, int $depth = 0): string
@@ -163,7 +171,12 @@ final class Printer
 
         $selections = [];
         foreach ($node->selections as $selection) {
-            $selections[] = $indent . $this->printSelectionNode($selection, $depth + 1);
+            foreach ($this->getLeadingComments($selection) as $comment) {
+                $selections[] = $indent . $comment;
+            }
+            $line = $indent . $this->printSelectionNode($selection, $depth + 1);
+            $trailingComment = $this->getTrailingComment($selection);
+            $selections[] = $line . $trailingComment;
         }
 
         return "{\n" . implode("\n", $selections) . "\n" . $closingIndent . '}';
@@ -399,7 +412,12 @@ final class Printer
         $indent = $this->config->indent;
         $lines = [];
         foreach ($items as $item) {
-            $lines[] = $indent . $printer($item);
+            foreach ($this->getLeadingComments($item) as $comment) {
+                $lines[] = $indent . $comment;
+            }
+            $line = $indent . $printer($item);
+            $trailingComment = $this->getTrailingComment($item);
+            $lines[] = $line . $trailingComment;
         }
 
         return "{\n" . implode("\n", $lines) . "\n}";
@@ -644,5 +662,61 @@ final class Printer
         $block = "{\n" . implode("\n", $opTypes) . "\n}";
 
         return 'extend schema' . $directives . ' ' . $block;
+    }
+
+    // -------------------------------------------------------------------------
+    // Comment helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Collect leading comment lines immediately preceding this node's start token.
+     * Returns them in top-to-bottom order without indentation.
+     * Stops collecting when a comment is found on the same line as the non-comment
+     * token before it (meaning it is a trailing inline comment of that token's node).
+     *
+     * @return list<string>
+     */
+    private function getLeadingComments(Node $node): array
+    {
+        if ($node->loc === null) {
+            return [];
+        }
+
+        $comments = [];
+        $token = $node->loc->startToken->prev;
+        while ($token !== null && $token->kind === Token::COMMENT) {
+            $prevToken = $token->prev;
+            // If the token before this comment is a non-comment on the same line,
+            // this comment is a trailing inline comment of that node — stop here.
+            if ($prevToken !== null && $prevToken->kind !== Token::COMMENT && $prevToken->line === $token->line) {
+                break;
+            }
+            array_unshift($comments, '#' . rtrim($token->value, "\n\r"));
+            $token = $prevToken;
+        }
+
+        return $comments;
+    }
+
+    /**
+     * Get the trailing inline comment on the same line as this node's end token.
+     * Returns the comment string (prefixed with ' #') or empty string.
+     */
+    private function getTrailingComment(Node $node): string
+    {
+        if ($node->loc === null) {
+            return '';
+        }
+
+        $nextToken = $node->loc->endToken->next;
+        if (
+            $nextToken !== null
+            && $nextToken->kind === Token::COMMENT
+            && $nextToken->line === $node->loc->endToken->line
+        ) {
+            return ' #' . rtrim($nextToken->value, "\n\r");
+        }
+
+        return '';
     }
 }

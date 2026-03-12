@@ -81,6 +81,16 @@ class FormatterIntegrationTest extends TestCase
         $this->assertFixtureIdempotent('sdl-types.gql');
     }
 
+    public function test_comments_fixture(): void
+    {
+        $this->assertFixture('comments.gql');
+    }
+
+    public function test_comments_idempotent(): void
+    {
+        $this->assertFixtureIdempotent('comments.gql');
+    }
+
     public function test_already_formatted_produces_no_diff(): void
     {
         $content = file_get_contents("{$this->expectedDir}/simple-query.gql");
