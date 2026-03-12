@@ -1,0 +1,16 @@
+# File-level comment
+# describing the whole file
+query GetUser {
+    # fetch the user by id
+    user(id: 1) {
+        name # user's full name
+        email
+    }
+}
+
+# Fragment comment
+fragment UserFields on User {
+    # the user id
+    id
+    name
+}
