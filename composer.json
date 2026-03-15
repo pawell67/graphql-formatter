@@ -20,8 +20,8 @@
     },
     "bin": ["bin/graphql-formatter"],
     "scripts": {
-        "cs-fix": "php-cs-fixer fix",
-        "cs-check": "php-cs-fixer fix --dry-run --diff",
+        "fix": "php-cs-fixer fix",
+        "check": "php-cs-fixer fix --dry-run --diff",
         "test": "vendor/bin/phpunit tests/"
     },
     "config": { "sort-packages": true }

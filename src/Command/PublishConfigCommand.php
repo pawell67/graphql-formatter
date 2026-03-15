@@ -59,8 +59,8 @@ final class PublishConfigCommand extends Command
     {
         // Works both from source repo and when installed as a dependency
         $candidates = [
-            __DIR__ . '/../../graphql-formatter.php.example',
-            __DIR__ . '/../../../pawell67/graphql-formatter/graphql-formatter.php.example',
+            __DIR__ . '/../../config/graphql-formatter.php',
+            __DIR__ . '/../../../pawell67/graphql-formatter/config/graphql-formatter.php',
         ];
 
         foreach ($candidates as $candidate) {
