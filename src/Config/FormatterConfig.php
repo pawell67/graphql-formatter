@@ -10,7 +10,6 @@ final class FormatterConfig
     public readonly int $printWidth;
     public readonly int $maxInlineArgs;
     public readonly bool $trailingNewline;
-    public readonly bool $normalizeKeywordCase;
     /** @var list<string> */
     public readonly array $paths;
 
@@ -19,14 +18,12 @@ final class FormatterConfig
         int $printWidth,
         int $maxInlineArgs,
         bool $trailingNewline,
-        bool $normalizeKeywordCase,
         array $paths,
     ) {
         $this->indent = $indent;
         $this->printWidth = $printWidth;
         $this->maxInlineArgs = $maxInlineArgs;
         $this->trailingNewline = $trailingNewline;
-        $this->normalizeKeywordCase = $normalizeKeywordCase;
         $this->paths = $paths;
     }
 
@@ -46,7 +43,6 @@ final class FormatterConfig
             printWidth: (int) ($config['print_width'] ?? 80),
             maxInlineArgs: (int) ($config['max_inline_args'] ?? 2),
             trailingNewline: (bool) ($config['trailing_newline'] ?? true),
-            normalizeKeywordCase: (bool) ($config['normalize_keyword_case'] ?? false),
             paths: $config['paths'] ?? ['.'],
         );
     }

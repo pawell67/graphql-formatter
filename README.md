@@ -81,9 +81,6 @@ return [
 
     // Whether to ensure a trailing newline at end of file
     'trailing_newline' => true,
-
-    // Whether to normalize keywords (query, mutation, fragment, on) to lowercase
-    'normalize_keyword_case' => false,
 ];
 ```
 
@@ -94,7 +91,6 @@ return [
 | `print_width` | `80` | — | Max line width before args expand to multiline |
 | `max_inline_args` | `2` | — | Max args allowed inline (applies to field args and operation variable definitions) |
 | `trailing_newline` | `true` | — | Ensure trailing newline at end of file |
-| `normalize_keyword_case` | `false` | — | Normalize `query`/`mutation`/etc. to lowercase |
 
 ## Formatting rules
 

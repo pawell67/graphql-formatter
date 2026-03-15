@@ -16,7 +16,6 @@ class FormatterConfigTest extends TestCase
         $this->assertSame(80, $config->printWidth);
         $this->assertSame(2, $config->maxInlineArgs);
         $this->assertTrue($config->trailingNewline);
-        $this->assertFalse($config->normalizeKeywordCase);
         $this->assertSame(['.'], $config->paths);
     }
 

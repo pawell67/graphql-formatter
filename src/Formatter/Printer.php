@@ -6,6 +6,7 @@ namespace GraphQLFormatter\Formatter;
 
 use GraphQL\Language\AST\ArgumentNode;
 use GraphQL\Language\AST\BooleanValueNode;
+use GraphQL\Language\AST\DirectiveDefinitionNode;
 use GraphQL\Language\AST\DirectiveNode;
 use GraphQL\Language\AST\DocumentNode;
 use GraphQL\Language\AST\EnumTypeDefinitionNode;
@@ -77,6 +78,7 @@ final class Printer
             $node instanceof OperationDefinitionNode => $this->printOperation($node),
             $node instanceof FragmentDefinitionNode => $this->printFragment($node),
             // SDL type definitions
+            $node instanceof DirectiveDefinitionNode => $this->printDirectiveDefinition($node),
             $node instanceof InputObjectTypeDefinitionNode => $this->printInputObjectTypeDefinition($node),
             $node instanceof InputObjectTypeExtensionNode => $this->printInputObjectTypeExtension($node),
             $node instanceof ObjectTypeDefinitionNode => $this->printObjectTypeDefinition($node),
@@ -186,7 +188,7 @@ final class Printer
     {
         return match (true) {
             $node instanceof FieldNode => $this->printField($node, $depth),
-            $node instanceof FragmentSpreadNode => $this->printFragmentSpread($node),
+            $node instanceof FragmentSpreadNode => $this->printFragmentSpread($node, $depth),
             $node instanceof InlineFragmentNode => $this->printInlineFragment($node, $depth),
             default => throw new \RuntimeException('Unsupported selection node: ' . $node::class),
         };
@@ -213,18 +215,30 @@ final class Printer
         return $result;
     }
 
-    private function printFragmentSpread(FragmentSpreadNode $node): string
+    private function printFragmentSpread(FragmentSpreadNode $node, int $depth): string
     {
-        return '...' . $node->name->value;
+        $result = '...' . $node->name->value;
+
+        foreach ($node->directives as $directive) {
+            $result .= ' ' . $this->printDirective($directive, $depth);
+        }
+
+        return $result;
     }
 
     private function printInlineFragment(InlineFragmentNode $node, int $depth): string
     {
         $typeCondition = $node->typeCondition !== null
-            ? 'on ' . $node->typeCondition->name->value . ' '
+            ? ' on ' . $node->typeCondition->name->value
             : '';
 
-        return '... ' . $typeCondition . $this->printSelectionSet($node->selectionSet, $depth);
+        $result = '...' . $typeCondition;
+
+        foreach ($node->directives as $directive) {
+            $result .= ' ' . $this->printDirective($directive, $depth);
+        }
+
+        return $result . ' ' . $this->printSelectionSet($node->selectionSet, $depth);
     }
 
     /** @param NodeList<ArgumentNode> $args */
@@ -287,12 +301,22 @@ final class Printer
             $value instanceof BooleanValueNode => $value->value ? 'true' : 'false',
             $value instanceof NullValueNode => 'null',
             $value instanceof EnumValueNode => $value->value,
-            $value instanceof StringValueNode => '"' . addslashes($value->value) . '"',
+            $value instanceof StringValueNode => $this->printStringValue($value),
             $value instanceof VariableNode => '$' . $value->name->value,
             $value instanceof ListValueNode => $this->printListValue($value, $depth),
             $value instanceof ObjectValueNode => $this->printObjectValue($value, $depth),
             default => throw new \RuntimeException('Unsupported value node: ' . $value::class),
         };
+    }
+
+    private function printStringValue(StringValueNode $node): string
+    {
+        if ($node->block) {
+            // Block strings are triple-quoted and should not be escaped like normal strings.
+            return '"""' . $node->value . '"""';
+        }
+
+        return '"' . addslashes($node->value) . '"';
     }
 
     private function printListValue(ListValueNode $node, int $depth): string
@@ -382,6 +406,17 @@ final class Printer
         $value = $description->value;
 
         return '"""' . "\n" . $value . "\n" . '"""' . "\n";
+    }
+
+    private function printInputValueDefinitionInline(InputValueDefinitionNode $node): string
+    {
+        $result = $node->name->value . ': ' . $this->printType($node->type);
+        if ($node->defaultValue !== null) {
+            $result .= ' = ' . $this->printValue($node->defaultValue, 0);
+        }
+        $result .= $this->printSdlDirectives($node->directives);
+
+        return $result;
     }
 
     /** @param NodeList<DirectiveNode> $directives */
@@ -662,6 +697,33 @@ final class Printer
         $block = "{\n" . implode("\n", $opTypes) . "\n}";
 
         return 'extend schema' . $directives . ' ' . $block;
+    }
+
+    private function printDirectiveDefinition(DirectiveDefinitionNode $node): string
+    {
+        $desc = $this->printSdlDescription($node->description);
+        $result = 'directive @' . $node->name->value;
+
+        if (count($node->arguments) > 0) {
+            $args = [];
+            foreach ($node->arguments as $arg) {
+                $args[] = $this->printInputValueDefinitionInline($arg);
+            }
+            $result .= '(' . implode(', ', $args) . ')';
+        }
+
+        if ($node->repeatable) {
+            $result .= ' repeatable';
+        }
+
+        $locations = [];
+        foreach ($node->locations as $location) {
+            $locations[] = $location->value;
+        }
+
+        $result .= ' on ' . implode(' | ', $locations);
+
+        return $desc . $result;
     }
 
     // -------------------------------------------------------------------------

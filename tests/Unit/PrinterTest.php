@@ -57,6 +57,12 @@ class PrinterTest extends TestCase
         $this->assertStringContainsString('...HeroFields', $output);
     }
 
+    public function test_fragment_spread_directives_are_preserved(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { hero { ...HeroFields @include(if: true) } }'));
+        $this->assertStringContainsString('...HeroFields @include(if: true)', $output);
+    }
+
     // Task 06: arguments
     public function test_single_arg_renders_inline(): void
     {
@@ -117,6 +123,12 @@ class PrinterTest extends TestCase
         $this->assertStringContainsString('... on User', $output);
     }
 
+    public function test_inline_fragment_directives_are_preserved(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { node { ... on User @skip(if: true) { name } } }'));
+        $this->assertStringContainsString('... on User @skip(if: true)', $output);
+    }
+
     public function test_inline_fragment_without_type_condition(): void
     {
         $output = $this->printer->print(Parser::parse('query Q { node { ... { name } } }'));
@@ -170,6 +182,12 @@ class PrinterTest extends TestCase
     {
         $output = $this->printer->print(Parser::parse('query Q($limit: Int = 10) { users { name } }'));
         $this->assertStringContainsString('$limit: Int = 10', $output);
+    }
+
+    public function test_block_string_value_is_preserved(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { field(text: """hello""") { id } }'));
+        $this->assertStringContainsString('text: """hello"""', $output);
     }
 
     // Task 10: alias and fragment directives
@@ -269,6 +287,13 @@ class PrinterTest extends TestCase
     {
         $ast = Parser::parse('union SearchResult = User | Post | Comment');
         $expected = "union SearchResult = User | Post | Comment\n";
+        $this->assertSame($expected, $this->printer->print($ast));
+    }
+
+    public function test_directive_definition_renders_correctly(): void
+    {
+        $ast = Parser::parse('directive @auth(role: String = "admin") repeatable on FIELD_DEFINITION | OBJECT');
+        $expected = "directive @auth(role: String = \"admin\") repeatable on FIELD_DEFINITION | OBJECT\n";
         $this->assertSame($expected, $this->printer->print($ast));
     }
 
