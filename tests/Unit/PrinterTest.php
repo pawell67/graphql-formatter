@@ -105,6 +105,64 @@ class PrinterTest extends TestCase
         $this->assertStringContainsString('ids: ["a", "b", "c"]', $output);
     }
 
+    public function test_long_list_of_scalars_renders_one_per_line(): void
+    {
+        $output = $this->printer->print(Parser::parse('query Q { field(ids: ["a", "bb", "ccc", "dddd", "eeee"]) { id } }'));
+        $this->assertStringContainsString("field(\n", $output);
+        $this->assertStringContainsString("ids: [\n", $output);
+        $this->assertStringContainsString("\"a\"\n", $output);
+        $this->assertStringContainsString("\"eeee\"\n", $output);
+        $this->assertStringNotContainsString('ids: ["a", "bb", "ccc", "dddd", "eeee"]', $output);
+    }
+
+    public function test_fragment_with_nested_where_and_long_key_in_list_formats_one_per_line(): void
+    {
+        $gql = <<<'GQL'
+fragment collectionMetadataAttributes on Collection {
+    attributes(
+        where: {
+            AND: [
+                { token_isNull: true }
+                { key_in: ["name", "description", "fallback_image", "banner_image", "media", "uri", "external_url", "hidden"] }
+            ]
+        }
+    ) {
+        key
+        value
+    }
+}
+GQL;
+
+        $expected = "fragment collectionMetadataAttributes on Collection {\n"
+            . "    attributes(\n"
+            . "        where: {\n"
+            . "            AND: [\n"
+            . "                {\n"
+            . "                    token_isNull: true\n"
+            . "                }\n"
+            . "                {\n"
+            . "                    key_in: [\n"
+            . "                        \"name\"\n"
+            . "                        \"description\"\n"
+            . "                        \"fallback_image\"\n"
+            . "                        \"banner_image\"\n"
+            . "                        \"media\"\n"
+            . "                        \"uri\"\n"
+            . "                        \"external_url\"\n"
+            . "                        \"hidden\"\n"
+            . "                    ]\n"
+            . "                }\n"
+            . "            ]\n"
+            . "        }\n"
+            . "    ) {\n"
+            . "        key\n"
+            . "        value\n"
+            . "    }\n"
+            . "}\n";
+
+        $this->assertSame($expected, $this->printer->print(Parser::parse($gql)));
+    }
+
     public function test_list_of_objects_renders_one_per_line(): void
     {
         $output = $this->printer->print(Parser::parse('query Q { field(filter: [{ active: true }, { id: 1 }]) { id } }'));

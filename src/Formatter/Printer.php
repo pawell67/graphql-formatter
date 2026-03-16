@@ -259,7 +259,12 @@ final class Printer
         if (count($args) <= $this->config->maxInlineArgs) {
             $rendered = [];
             foreach ($args as $arg) {
-                $rendered[] = $this->printArgument($arg, $depth);
+                $renderedArg = $this->printArgument($arg, $depth);
+                // If any argument value expands to multiple lines (e.g. long lists), force multiline args.
+                if (str_contains($renderedArg, "\n")) {
+                    return $this->printArgumentsMultiline($args, $depth);
+                }
+                $rendered[] = $renderedArg;
             }
             $inline = '(' . implode(', ', $rendered) . ')';
 
@@ -344,7 +349,24 @@ final class Printer
             $values[] = $this->printValue($value, $depth);
         }
 
-        return '[' . implode(', ', $values) . ']';
+        $inline = '[' . implode(', ', $values) . ']';
+
+        // Prefer multiline for longer scalar lists, or when the list itself exceeds print width.
+        // This keeps "where" filters and other long IN-lists readable.
+        $currentIndent = str_repeat($this->config->indent, $depth);
+        $inlineLength = strlen($currentIndent . $inline);
+        if (count($node->values) <= 4 && $inlineLength <= $this->config->printWidth) {
+            return $inline;
+        }
+
+        $indent = str_repeat($this->config->indent, $depth + 1);
+        $closingIndent = str_repeat($this->config->indent, $depth);
+        $lines = [];
+        foreach ($node->values as $v) {
+            $lines[] = $indent . $this->printValue($v, $depth + 1);
+        }
+
+        return "[\n" . implode("\n", $lines) . "\n" . $closingIndent . ']';
     }
 
     private function printObjectValue(ObjectValueNode $node, int $depth): string
