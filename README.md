@@ -5,7 +5,7 @@ An opinionated formatter for `.gql` and `.graphql` files. Written in PHP, powere
 ## Installation
 
 ```bash
-composer require --dev pawell67/graphql-formatter
+composer require --dev enjin-forks/graphql-formatter
 ```
 
 ## Usage
@@ -194,7 +194,7 @@ enum UserRole {
 ## Development
 
 ```bash
-git clone https://github.com/pawell67/graphql-formatter.git
+git clone https://github.com/enjin-forks/graphql-formatter.git
 cd graphql-formatter
 composer install
 ./vendor/bin/phpunit tests/
@@ -204,4 +204,4 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the full contribution guide.
 
 ## License
 
-[MIT](LICENSE) © Pawel Wankiewicz
+[MIT](LICENSE)
