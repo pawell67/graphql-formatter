@@ -5,7 +5,7 @@ Thank you for considering contributing to graphql-formatter!
 ## Getting started
 
 ```bash
-git clone https://github.com/pawell67/graphql-formatter.git
+git clone https://github.com/enjin-forks/graphql-formatter.git
 cd graphql-formatter
 composer install
 ```
@@ -49,7 +49,7 @@ This project follows **test-driven development**. Before adding a feature or fix
 
 ## Reporting bugs
 
-Open a [GitHub issue](https://github.com/pawell67/graphql-formatter/issues) with:
+Open a [GitHub issue](https://github.com/enjin-forks/graphql-formatter/issues) with:
 
 - PHP version
 - Package version
